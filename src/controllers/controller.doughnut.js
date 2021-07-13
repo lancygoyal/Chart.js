@@ -20,8 +20,8 @@ function getRatioAndOffset(rotation, circumference, cutout) {
     const startY = Math.sin(startAngle);
     const endX = Math.cos(endAngle);
     const endY = Math.sin(endAngle);
-    const calcMax = (angle, a, b) => _angleBetween(angle, startAngle, endAngle) ? 1 : Math.max(a, a * cutout, b, b * cutout);
-    const calcMin = (angle, a, b) => _angleBetween(angle, startAngle, endAngle) ? -1 : Math.min(a, a * cutout, b, b * cutout);
+    const calcMax = (angle, a, b) => _angleBetween(angle, startAngle, endAngle, true) ? 1 : Math.max(a, a * cutout, b, b * cutout);
+    const calcMin = (angle, a, b) => _angleBetween(angle, startAngle, endAngle, true) ? -1 : Math.min(a, a * cutout, b, b * cutout);
     const maxX = calcMax(0, startX, endX);
     const maxY = calcMax(HALF_PI, startY, endY);
     const minX = calcMin(PI, startX, endX);
@@ -110,7 +110,7 @@ export default class DoughnutController extends DatasetController {
     const {chartArea} = chart;
     const meta = me._cachedMeta;
     const arcs = meta.data;
-    const spacing = me.getMaxBorderWidth() + me.getMaxOffset(arcs);
+    const spacing = me.getMaxBorderWidth() + me.getMaxOffset(arcs) + me.options.spacing;
     const maxSize = Math.max((Math.min(chartArea.width, chartArea.height) - spacing) / 2, 0);
     const cutout = Math.min(toPercentage(me.options.cutout, maxSize), 1);
     const chartWeight = me._getRingWeight(me.index);
@@ -186,7 +186,7 @@ export default class DoughnutController extends DatasetController {
         innerRadius
       };
       if (includeOptions) {
-        properties.options = sharedOptions || me.resolveDataElementOptions(i, mode);
+        properties.options = sharedOptions || me.resolveDataElementOptions(i, arc.active ? 'active' : mode);
       }
       startAngle += circumference;
 
@@ -325,7 +325,7 @@ DoughnutController.defaults = {
   animations: {
     numbers: {
       type: 'number',
-      properties: ['circumference', 'endAngle', 'innerRadius', 'outerRadius', 'startAngle', 'x', 'y', 'offset', 'borderWidth']
+      properties: ['circumference', 'endAngle', 'innerRadius', 'outerRadius', 'startAngle', 'x', 'y', 'offset', 'borderWidth', 'spacing']
     },
   },
   // The percentage of the chart that we cut out of the middle.
@@ -340,7 +340,15 @@ DoughnutController.defaults = {
   // The outr radius of the chart
   radius: '100%',
 
+  // Spacing between arcs
+  spacing: 0,
+
   indexAxis: 'r',
+};
+
+DoughnutController.descriptors = {
+  _scriptable: (name) => name !== 'spacing',
+  _indexable: (name) => name !== 'spacing',
 };
 
 /**
@@ -356,6 +364,8 @@ DoughnutController.overrides = {
         generateLabels(chart) {
           const data = chart.data;
           if (data.labels.length && data.datasets.length) {
+            const {labels: {pointStyle}} = chart.legend.options;
+
             return data.labels.map((label, i) => {
               const meta = chart.getDatasetMeta(0);
               const style = meta.controller.getStyle(i);
@@ -365,6 +375,7 @@ DoughnutController.overrides = {
                 fillStyle: style.backgroundColor,
                 strokeStyle: style.borderColor,
                 lineWidth: style.borderWidth,
+                pointStyle: pointStyle,
                 hidden: !chart.getDataVisibility(i),
 
                 // Extra data used for toggling the correct item

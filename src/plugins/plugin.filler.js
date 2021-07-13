@@ -74,7 +74,7 @@ function decodeFill(line, index, count) {
     return target;
   }
 
-  return ['origin', 'start', 'end', 'stack'].indexOf(fill) >= 0 && fill;
+  return ['origin', 'start', 'end', 'stack', 'shape'].indexOf(fill) >= 0 && fill;
 }
 
 function computeLinearBoundary(source) {
@@ -172,13 +172,24 @@ function computeBoundary(source) {
   return computeLinearBoundary(source);
 }
 
+function findSegmentEnd(start, end, points) {
+  for (;end > start; end--) {
+    const point = points[end];
+    if (!isNaN(point.x) && !isNaN(point.y)) {
+      break;
+    }
+  }
+  return end;
+}
+
 function pointsFromSegments(boundary, line) {
   const {x = null, y = null} = boundary || {};
   const linePoints = line.points;
   const points = [];
-  line.segments.forEach((segment) => {
-    const first = linePoints[segment.start];
-    const last = linePoints[segment.end];
+  line.segments.forEach(({start, end}) => {
+    end = findSegmentEnd(start, end, linePoints);
+    const first = linePoints[start];
+    const last = linePoints[end];
     if (y !== null) {
       points.push({x: first.x, y});
       points.push({x: last.x, y});
@@ -304,6 +315,10 @@ function getTarget(source) {
     return buildStackLine(source);
   }
 
+  if (fill === 'shape') {
+    return true;
+  }
+
   const boundary = computeBoundary(source);
 
   if (boundary instanceof simpleArc) {
@@ -406,7 +421,10 @@ function _segments(line, target, property) {
   const parts = [];
 
   for (const segment of segments) {
-    const bounds = getBounds(property, points[segment.start], points[segment.end], segment.loop);
+    let {start, end} = segment;
+    end = findSegmentEnd(start, end, points);
+
+    const bounds = getBounds(property, points[start], points[end], segment.loop);
 
     if (!target.segments) {
       // Special case for boundary not supporting `segments` (simpleArc)
@@ -414,8 +432,8 @@ function _segments(line, target, property) {
       parts.push({
         source: segment,
         target: bounds,
-        start: points[segment.start],
-        end: points[segment.end]
+        start: points[start],
+        end: points[end]
       });
       continue;
     }
@@ -467,24 +485,30 @@ function _fill(ctx, cfg) {
 
   for (const {source: src, target: tgt, start, end} of segments) {
     const {style: {backgroundColor = color} = {}} = src;
+    const notShape = target !== true;
+
     ctx.save();
     ctx.fillStyle = backgroundColor;
 
-    clipBounds(ctx, scale, getBounds(property, start, end));
+    clipBounds(ctx, scale, notShape && getBounds(property, start, end));
 
     ctx.beginPath();
 
     const lineLoop = !!line.pathSegment(ctx, src);
-    if (lineLoop) {
-      ctx.closePath();
-    } else {
-      interpolatedLineTo(ctx, target, end, property);
-    }
 
-    const targetLoop = !!target.pathSegment(ctx, tgt, {move: lineLoop, reverse: true});
-    const loop = lineLoop && targetLoop;
-    if (!loop) {
-      interpolatedLineTo(ctx, target, start, property);
+    let loop;
+    if (notShape) {
+      if (lineLoop) {
+        ctx.closePath();
+      } else {
+        interpolatedLineTo(ctx, target, end, property);
+      }
+
+      const targetLoop = !!target.pathSegment(ctx, tgt, {move: lineLoop, reverse: true});
+      loop = lineLoop && targetLoop;
+      if (!loop) {
+        interpolatedLineTo(ctx, target, start, property);
+      }
     }
 
     ctx.closePath();
@@ -565,19 +589,32 @@ export default {
     }
   },
 
-  beforeDatasetsDraw(chart, _args, options) {
+  beforeDraw(chart, _args, options) {
+    const draw = options.drawTime === 'beforeDraw';
     const metasets = chart.getSortedVisibleDatasetMetas();
     const area = chart.chartArea;
-
     for (let i = metasets.length - 1; i >= 0; --i) {
       const source = metasets[i].$filler;
+      if (!source) {
+        continue;
+      }
 
+      source.line.updateControlPoints(area, source.axis);
+      if (draw) {
+        drawfill(chart.ctx, source, area);
+      }
+    }
+  },
+
+  beforeDatasetsDraw(chart, _args, options) {
+    if (options.drawTime !== 'beforeDatasetsDraw') {
+      return;
+    }
+    const metasets = chart.getSortedVisibleDatasetMetas();
+    for (let i = metasets.length - 1; i >= 0; --i) {
+      const source = metasets[i].$filler;
       if (source) {
-        source.line.updateControlPoints(area);
-
-        if (options.drawTime === 'beforeDatasetsDraw') {
-          drawfill(chart.ctx, source, area);
-        }
+        drawfill(chart.ctx, source, chart.chartArea);
       }
     }
   },

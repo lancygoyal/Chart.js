@@ -22,6 +22,8 @@ export const sign = Math.sign;
  * @return {number}
  */
 export function niceNum(range) {
+  const roundedRange = Math.round(range);
+  range = almostEquals(range, roundedRange, range / 1000) ? roundedRange : range;
   const niceRange = Math.pow(10, Math.floor(log10(range)));
   const fraction = range / niceRange;
   const niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
@@ -148,7 +150,7 @@ export function _normalizeAngle(a) {
 /**
  * @private
  */
-export function _angleBetween(angle, start, end) {
+export function _angleBetween(angle, start, end, sameAngleIsFullCircle) {
   const a = _normalizeAngle(angle);
   const s = _normalizeAngle(start);
   const e = _normalizeAngle(end);
@@ -156,7 +158,8 @@ export function _angleBetween(angle, start, end) {
   const angleToEnd = _normalizeAngle(e - a);
   const startToAngle = _normalizeAngle(a - s);
   const endToAngle = _normalizeAngle(a - e);
-  return a === s || a === e || (angleToStart > angleToEnd && startToAngle < endToAngle);
+  return a === s || a === e || (sameAngleIsFullCircle && s === e)
+    || (angleToStart > angleToEnd && startToAngle < endToAngle);
 }
 
 /**

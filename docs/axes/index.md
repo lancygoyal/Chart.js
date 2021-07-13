@@ -11,6 +11,86 @@ Scales in Chart.js >v2.0 are significantly more powerful, but also different tha
 * Scale titles are supported.
 * New scale types can be extended without writing an entirely new chart type.
 
+## Default scales
+
+The default `scaleId`'s for carterian charts are `'x'` and `'y'`. For radial charts: `'r'`.
+Each dataset is mapped to a scale for each axis (x, y or r) it requires. The scaleId's that a dataset is mapped to, is determined by the `xAxisID`, `yAxisID` or `rAxisID`.
+If the ID for an axis is not specified, first scale for that axis is used. If no scale for an axis is found, a new scale is created.
+
+Some examples:
+
+The following chart will have `'x'` and `'y'` scales:
+
+```js
+let chart = new Chart(ctx, {
+  type: 'line'
+});
+```
+
+The following chart will have scales `'x'` and `'myScale'`:
+
+```js
+let chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    datasets: [{
+      data: [1, 2, 3]
+    }]
+  },
+  options: {
+    scales: {
+      myScale: {
+        type: 'logarithmic',
+        position: 'right', // `axis` is determined by the position as `'y'`
+      }
+    }
+  }
+});
+```
+
+The following chart will have scales `'xAxis'` and `'yAxis'`:
+
+```js
+let chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    datasets: [{
+      yAxisID: 'yAxis'
+    }]
+  },
+  options: {
+    scales: {
+      xAxis: {
+        // The axis for this scale is determined from the first letter of the id as `'x'`
+        // It is recommended to specify `position` and / or `axis` explicitly.
+        type: 'time',
+      }
+    }
+  }
+});
+```
+
+The following chart will have `'r'` scale:
+
+```js
+let chart = new Chart(ctx, {
+  type: 'radar'
+});
+```
+
+The following chart will have `'myScale'` scale:
+
+```js
+let chart = new Chart(ctx, {
+  type: 'radar',
+  scales: {
+    myScale: {
+      axis: 'r'
+    }
+  }
+});
+```
+
 ## Common Configuration
 
 !!!include(axes/_common.md)!!!
@@ -77,8 +157,8 @@ Namespace: `options.scales[scaleId]`
 | `afterBuildTicks` | `axis` | Callback that runs after ticks are created. Useful for filtering ticks.
 | `beforeTickToLabelConversion` | `axis` | Callback that runs before ticks are converted into strings.
 | `afterTickToLabelConversion` | `axis` | Callback that runs after ticks are converted into strings.
-| `beforeCalculateTickRotation` | `axis` | Callback that runs before tick rotation is determined.
-| `afterCalculateTickRotation` | `axis` | Callback that runs after tick rotation is determined.
+| `beforeCalculateLabelRotation` | `axis` | Callback that runs before tick rotation is determined.
+| `afterCalculateLabelRotation` | `axis` | Callback that runs after tick rotation is determined.
 | `beforeFit` | `axis` | Callback that runs before the scale fits to the canvas.
 | `afterFit` | `axis` | Callback that runs after the scale fits to the canvas.
 | `afterUpdate` | `axis` | Callback that runs at the end of the update process.

@@ -29,12 +29,13 @@ module.exports = {
         {base: '/samples', alternative: ['bar/vertical']},
       ],
     }],
+    ['vuepress-plugin-code-copy', true],
     [
       'vuepress-plugin-typedoc',
       {
         entryPoints: ['../../types/index.esm.d.ts'],
         hideInPageTOC: true,
-        tsconfig: '../../tsconfig.json',
+        tsconfig: 'tsconfig.json',
         sidebar: {
           fullNames: true,
           parentCategory: 'API',
@@ -188,6 +189,7 @@ module.exports = {
             'scales/time-line',
             'scales/time-max-span',
             'scales/time-combo',
+            'scales/stacked'
           ]
         },
         {
@@ -216,6 +218,11 @@ module.exports = {
           ]
         },
         {
+          title: 'Subtitle',
+          children: [
+            'subtitle/basic',
+          ]
+        },        {
           title: 'Tooltip',
           children: [
             'tooltip/position',
@@ -264,6 +271,7 @@ module.exports = {
             'plugins/quadrants',
           ]
         },
+        'utils'
       ],
       '/': [
         '',
@@ -302,6 +310,7 @@ module.exports = {
             'configuration/layout',
             'configuration/legend',
             'configuration/title',
+            'configuration/subtitle',
             'configuration/tooltip',
             'configuration/elements',
             'configuration/decimation'
@@ -339,6 +348,7 @@ module.exports = {
             {
               title: 'Radial',
               children: [
+                'axes/radial/',
                 'axes/radial/linear'
               ],
             },

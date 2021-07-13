@@ -49,7 +49,8 @@ import {
   Filler,
   Legend,
   Title,
-  Tooltip
+  Tooltip,
+  SubTitle
 } from 'chart.js';
 
 Chart.register(
@@ -75,7 +76,8 @@ Chart.register(
   Filler,
   Legend,
   Title,
-  Tooltip
+  Tooltip,
+  SubTitle
 );
 
 var myChart = new Chart(ctx, {...});
@@ -92,6 +94,31 @@ And finally there is an separate path to do just the above for you, in one line:
 
 ```javascript
 import Chart from 'chart.js/auto';
+```
+
+### Helper functions
+
+If you want to use the helper functions, you will need to import these separately from the helpers package and use them as stand-alone functions.
+
+Example of [Converting Events to Data Values](../configuration/interactions.md#converting-events-to-data-values) using bundlers.
+
+```javascript
+import Chart from 'chart.js/auto';
+import { getRelativePosition } from 'chart.js/helpers';
+
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: data,
+  options: {
+    onClick: (e) => {
+      const canvasPosition = getRelativePosition(e, chart);
+
+      // Substitute the appropriate scale IDs
+      const dataX = chart.scales.x.getValueForPixel(canvasPosition.x);
+      const dataY = chart.scales.y.getValueForPixel(canvasPosition.y);
+    }
+  }
+});
 ```
 
 ## Require JS

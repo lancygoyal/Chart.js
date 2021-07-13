@@ -217,7 +217,7 @@ function _resolveScriptable(prop, value, target, receiver) {
   const {_proxy, _context, _subProxy, _stack} = target;
   if (_stack.has(prop)) {
     // @ts-ignore
-    throw new Error('Recursion detected: ' + [..._stack].join('->') + '->' + prop);
+    throw new Error('Recursion detected: ' + Array.from(_stack).join('->') + '->' + prop);
   }
   _stack.add(prop);
   value = value(_context, _subProxy || receiver);
@@ -290,13 +290,8 @@ function createSubResolver(parentScopes, resolver, prop, value) {
       return false;
     }
   }
-  return _createResolver([...set], [''], rootScopes, fallback, () => {
-    const parent = resolver._getTarget();
-    if (!(prop in parent)) {
-      parent[prop] = {};
-    }
-    return parent[prop];
-  });
+  return _createResolver(Array.from(set), [''], rootScopes, fallback,
+    () => subGetTarget(resolver, prop, value));
 }
 
 function addScopesFromKey(set, allScopes, key, fallback) {
@@ -304,6 +299,19 @@ function addScopesFromKey(set, allScopes, key, fallback) {
     key = addScopes(set, allScopes, key, fallback);
   }
   return key;
+}
+
+function subGetTarget(resolver, prop, value) {
+  const parent = resolver._getTarget();
+  if (!(prop in parent)) {
+    parent[prop] = {};
+  }
+  const target = parent[prop];
+  if (isArray(target) && isObject(value)) {
+    // For array of objects, the object is used to store updated values
+    return value;
+  }
+  return target;
 }
 
 function _resolveWithPrefixes(prop, prefixes, scopes, proxy) {
@@ -345,5 +353,5 @@ function resolveKeysFromAllScopes(scopes) {
       set.add(key);
     }
   }
-  return [...set];
+  return Array.from(set);
 }

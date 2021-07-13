@@ -1,5 +1,6 @@
 import DatasetController from '../core/core.datasetController';
 import {toRadians, PI} from '../helpers/index';
+import {formatNumber} from '../helpers/helpers.intl';
 
 export default class PolarAreaController extends DatasetController {
 
@@ -8,6 +9,19 @@ export default class PolarAreaController extends DatasetController {
 
     this.innerRadius = undefined;
     this.outerRadius = undefined;
+  }
+
+  getLabelAndValue(index) {
+    const me = this;
+    const meta = me._cachedMeta;
+    const chart = me.chart;
+    const labels = chart.data.labels || [];
+    const value = formatNumber(meta._parsed[index].r, chart.options.locale);
+
+    return {
+      label: labels[index] || '',
+      value,
+    };
   }
 
   update(mode) {
@@ -77,7 +91,7 @@ export default class PolarAreaController extends DatasetController {
         outerRadius,
         startAngle,
         endAngle,
-        options: me.resolveDataElementOptions(i, mode)
+        options: me.resolveDataElementOptions(i, arc.active ? 'active' : mode)
       };
 
       me.updateElement(arc, i, properties, mode);
@@ -141,6 +155,8 @@ PolarAreaController.overrides = {
         generateLabels(chart) {
           const data = chart.data;
           if (data.labels.length && data.datasets.length) {
+            const {labels: {pointStyle}} = chart.legend.options;
+
             return data.labels.map((label, i) => {
               const meta = chart.getDatasetMeta(0);
               const style = meta.controller.getStyle(i);
@@ -150,6 +166,7 @@ PolarAreaController.overrides = {
                 fillStyle: style.backgroundColor,
                 strokeStyle: style.borderColor,
                 lineWidth: style.borderWidth,
+                pointStyle: pointStyle,
                 hidden: !chart.getDataVisibility(i),
 
                 // Extra data used for toggling the correct item
